@@ -130,6 +130,7 @@ def main():
                                     comment.mod.remove(mod_note=f"{prefix} summary improperly formatted", spam=False)
                                     rem_cmt = comment.mod.send_removal_message(message=f"Your comment was improperly formatted and has been removed:\n\n{reason}\n\nPlease correct any issues and try again.", type="public")
                                     rem_cmt.mod.lock()
+                                    rem_cmt.mod.ignore_reports()
                     if comment_is_old_post:
                         comment.mod.remove(mod_note="Old posts are unavailable", spam=False)
                 i += 1
