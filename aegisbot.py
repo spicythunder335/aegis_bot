@@ -125,8 +125,20 @@ def main():
                         if comment.submission.title in title_list:
                             comment_is_old_post = False
                             if comment.parent_id.startswith("t3_"):
+                                if comment.author is None:
+                                    continue
                                 reason = validate_comment(comment, prefix)
-                                if len(reason) > 0:
+                                if comment.banned_by is not None:
+                                    if comment.banned_by == "aegis_bot":
+                                        if len(reason) < 1:
+                                            comment.mod.approve()
+                                            comment.refresh()
+                                            for reply in comment.replies:
+                                                if reply.author.name == "aegis_bot":
+                                                    reply.mod.remove(spam=False)
+                                    else:
+                                        continue
+                                elif len(reason) > 0:
                                     comment.mod.remove(mod_note=f"{prefix} summary improperly formatted", spam=False)
                                     rem_cmt = comment.mod.send_removal_message(message=f"Your comment was improperly formatted and has been removed:\n\n{reason}\n\nPlease correct any issues and try again.", type="public")
                                     rem_cmt.mod.lock()
