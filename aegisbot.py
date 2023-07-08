@@ -9,7 +9,9 @@ import requests
 import time
 import re
 
-with open('creds.json') as c:
+script_path = f"{os.path.dirname(__file__)}/"
+
+with open(f"{script_path}creds.json") as c:
     login = json.load(c)
 reddit = praw.Reddit(client_id=login['client_id'],
             client_secret=login['client_secret'],
@@ -18,25 +20,25 @@ reddit = praw.Reddit(client_id=login['client_id'],
             refresh_token=login['refresh_token'])
 
 sub_name = "DMAcademy"
-config = None
+abconfig = None
 wiki_config = None
 mod_list = None
 best_comments = []
-comment_file = sys.path[0] + "/bestofcomments.txt"
+comment_file = f"{script_path}bestofcomments.txt"
 with open(comment_file, "r") as file_comments:
     best_comments = file_comments.read().split('\n')
 
 def reload_config(subreddit):
-    global config
+    global abconfig
     global wiki_config
     global mod_list
-    config = load_local_config()
+    abconfig = load_local_config(script_path)
     mod_list = [str(moderator) for moderator in subreddit.moderator()]
     try:
         wikipage = subreddit.wiki["aegis_bot_config"]
         wiki_config = json.loads(wikipage.content_md)
     except Exception as exc:
-        log_discord(config["errfile"], config["webhook"], "Aegis Bot Config Error", str(exc))
+        log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Config Error", str(exc))
         return False
     return True
 
@@ -60,7 +62,7 @@ def validate_comment(comment, prefix):
         if txt is None:
             reason = f"{bad_msg}\n\nPlease ensure there is also a line break after your summary to help distinguish it from the rest of your comment."
         elif len(txt.group()) > 250:
-            reason = f"Your {prefix} summary must be shorter than 300 characters.\n\nPlease shorten your first line and put additional details below your summary."
+            reason = f"Your {pfx} summary must be shorter than 250 characters.\n\nPlease shorten your first line and put additional details below your summary."
     return reason
 
 def check_top_comments(subreddit):
@@ -107,10 +109,10 @@ def main():
     if not reload_config(subreddit):
         return
     try:
-        log_discord(config["errfile"], config["webhook"], "Aegis Bot Started for DMA", "")
+        log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Started for DMA", "")
         comment_stream = subreddit.stream.comments(skip_existing=True, pause_after=-1)
         i = 0
-        iteration = 5
+        iteration = 2
         while True:
             try:
                 for comment in comment_stream:
@@ -130,16 +132,16 @@ def main():
                                     rem_cmt.mod.lock()
                     if comment_is_old_post:
                         comment.mod.remove(mod_note="Old posts are unavailable", spam=False)
-                i += 100
+                i += 1
                 reload_config(subreddit)
                 if i >= (int(wiki_config["best_of_dma"]["check_frequency_minutes"]) * 60) / iteration:
                     i = 0
                     check_top_comments(subreddit)
                 time.sleep(iteration)
             except Exception as exc:
-                log_discord(config["errfile"], config["webhook"], "Aegis Bot Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
+                log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
     except Exception as exc:
-        log_discord(config["errfile"], config["webhook"], "Aegis Bot Fatal Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
+        log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Fatal Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
     finally:
         time.sleep(30)
 
