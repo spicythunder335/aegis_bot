@@ -53,15 +53,15 @@ def validate_comment(comment, prefix):
     if not text.startswith(pfx):
         reason = f"All top-level comments must begin with: {pfx}"
     else:
-        bad_msg = f"{prefix} must be followed by a single-line summary and additional supporting information."
-        srch_parm = r"\n"
+        bad_msg = f"{pfx} must be followed by a single-line summary and additional supporting information."
+        srch_parm = r"\n|\r"
         if punc is not None:
-            bad_msg = f"{prefix} must be followed by a single-line summary and end with a '{punc}'."
+            bad_msg = f"{pfx} must be followed by a single-line summary and end with a '{punc}'."
             srch_parm = rf"\{punc}"
-        txt = re.search(rf"({prefix}).*?({srch_parm})", text)
+        txt = re.search(rf"({pfx}).*?({srch_parm})", text)
         if txt is None:
             reason = f"{bad_msg}\n\nPlease ensure there is also a line break after your summary to help distinguish it from the rest of your comment."
-        elif len(txt.group()) > 250:
+        elif len(txt.group()) > 250 and punc is None:
             reason = f"Your {pfx} summary must be shorter than 250 characters.\n\nPlease shorten your first line and put additional details below your summary."
     return reason
 
