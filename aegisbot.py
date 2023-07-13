@@ -105,58 +105,59 @@ def check_top_comments(subreddit):
                         file_comments.write(f"{comment.id}\n")
 
 def main():
-    subreddit = reddit.subreddit(sub_name)
-    if not reload_config(subreddit):
-        return
-    try:
-        log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Started for DMA", "")
-        comment_stream = subreddit.stream.comments(skip_existing=True, pause_after=-1)
-        i = 0
-        iteration = 2
-        while True:
-            try:
-                for comment in comment_stream:
-                    if comment is None:
-                        break
-                    if comment.author.name in mod_list:
-                        continue
-                    comment_is_old_post = True
-                    for prefix, title_list in wiki_config["allowed_comment_formats"].items():
-                        if comment.submission.title in title_list:
-                            comment_is_old_post = False
-                            if comment.parent_id.startswith("t3_"):
-                                if comment.author is None:
-                                    continue
-                                reason = validate_comment(comment, prefix)
-                                if comment.banned_by is not None:
-                                    if comment.banned_by == "aegis_bot":
-                                        if len(reason) < 1:
-                                            comment.mod.approve()
-                                            comment.refresh()
-                                            for reply in comment.replies:
-                                                if reply.author.name == "aegis_bot":
-                                                    reply.mod.remove(spam=False)
-                                    else:
+    while True:
+        subreddit = reddit.subreddit(sub_name)
+        if not reload_config(subreddit):
+            return
+        try:
+            log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Started for DMA", "")
+            comment_stream = subreddit.stream.comments(skip_existing=True, pause_after=-1)
+            i = 0
+            iteration = 2
+            while True:
+                try:
+                    for comment in comment_stream:
+                        if comment is None:
+                            break
+                        if comment.author.name in mod_list:
+                            continue
+                        comment_is_old_post = True
+                        for prefix, title_list in wiki_config["allowed_comment_formats"].items():
+                            if comment.submission.title in title_list:
+                                comment_is_old_post = False
+                                if comment.parent_id.startswith("t3_"):
+                                    if comment.author is None:
                                         continue
-                                elif len(reason) > 0:
-                                    comment.mod.remove(mod_note=f"{prefix} summary improperly formatted", spam=False)
-                                    rem_cmt = comment.mod.send_removal_message(message=f"Your comment was improperly formatted and has been removed:\n\n{reason}\n\nPlease correct any issues and try again.", type="public")
-                                    rem_cmt.mod.lock()
-                                    rem_cmt.mod.ignore_reports()
-                    if comment_is_old_post:
-                        comment.mod.remove(mod_note="Old posts are unavailable", spam=False)
-                i += 1
-                reload_config(subreddit)
-                if i >= (int(wiki_config["best_of_dma"]["check_frequency_minutes"]) * 60) / iteration:
-                    i = 0
-                    check_top_comments(subreddit)
-                time.sleep(iteration)
-            except Exception as exc:
-                log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
-    except Exception as exc:
-        log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Fatal Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
-    finally:
-        time.sleep(30)
+                                    reason = validate_comment(comment, prefix)
+                                    if comment.banned_by is not None:
+                                        if comment.banned_by == "aegis_bot":
+                                            if len(reason) < 1:
+                                                comment.mod.approve()
+                                                comment.refresh()
+                                                for reply in comment.replies:
+                                                    if reply.author.name == "aegis_bot":
+                                                        reply.mod.remove(spam=False)
+                                        else:
+                                            continue
+                                    elif len(reason) > 0:
+                                        comment.mod.remove(mod_note=f"{prefix} summary improperly formatted", spam=False)
+                                        rem_cmt = comment.mod.send_removal_message(message=f"Your comment was improperly formatted and has been removed:\n\n{reason}\n\nPlease correct any issues and try again.", type="public")
+                                        rem_cmt.mod.lock()
+                                        rem_cmt.mod.ignore_reports()
+                        if comment_is_old_post:
+                            comment.mod.remove(mod_note="Old posts are unavailable", spam=False)
+                    i += 1
+                    reload_config(subreddit)
+                    if i >= (int(wiki_config["best_of_dma"]["check_frequency_minutes"]) * 60) / iteration:
+                        i = 0
+                        check_top_comments(subreddit)
+                    time.sleep(iteration)
+                except Exception as exc:
+                    log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
+        except Exception as exc:
+            log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Fatal Error", f"Line no: {sys.exc_info()[2].tb_lineno}\n{str(exc)}")
+        finally:
+            time.sleep(30)
 
 if __name__ == "__main__":
     main()
