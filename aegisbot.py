@@ -111,10 +111,12 @@ def main():
             return
         try:
             log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Started for DMA", "")
-            comment_stream = subreddit.stream.comments(skip_existing=True, pause_after=-1)
             i = 0
             iteration = 2
+            comment_stream = None
             while True:
+                if comment_stream is None:
+                    comment_stream = subreddit.stream.comments(skip_existing=True, pause_after=-1)
                 try:
                     for comment in comment_stream:
                         if comment is None:
