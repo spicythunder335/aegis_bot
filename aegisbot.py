@@ -45,6 +45,8 @@ def reload_config(subreddit):
 def validate_comment(comment, prefix):
     reason = ""
     pfx = prefix.lower()
+    if pfx == "allow":
+        return reason
     punc = None
     text = comment.body.lower()
     if not pfx[-1].isalpha():
