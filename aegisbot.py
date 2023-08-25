@@ -108,10 +108,11 @@ def check_top_comments(subreddit):
 
 def main():
     while True:
-        subreddit = reddit.subreddit(sub_name)
-        if not reload_config(subreddit):
-            return
         try:
+            subreddit = reddit.subreddit(sub_name)
+            if not reload_config(subreddit):
+                time.sleep(30)
+                continue
             log_discord(script_path + abconfig["errfile"], abconfig["webhook"], "Aegis Bot Started for DMA", "")
             i = 0
             iteration = 2
